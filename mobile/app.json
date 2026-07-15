@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "AiCarrierBuilder",
+    "slug": "resume-builder-ai",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.resumeai.app"
+    },
+    "android": {
+      "package": "com.resumeai.app"
+    },
+    "extra": {
+      "apiBaseUrl": "https://192.168.1.35/api"
+    }
+  }
+}
