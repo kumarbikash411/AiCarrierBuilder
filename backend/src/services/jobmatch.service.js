@@ -1,25 +1,4 @@
-const axios = require('axios');
-
-async function callClaude(systemPrompt, userPrompt, maxTokens = 1200) {
-  const response = await axios.post(
-    'https://api.anthropic.com/v1/messages',
-    {
-      model: 'claude-sonnet-4-6',
-      max_tokens: maxTokens,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userPrompt }],
-    },
-    {
-      headers: {
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-    }
-  );
-  const textBlock = response.data.content.find((b) => b.type === 'text');
-  return textBlock ? textBlock.text.trim() : '';
-}
+const { callGroq } = require('./groq.service');
 
 function resumeToPlainText(content) {
   const { personalInfo = {}, summary, experience = [], education = [], skills = [] } = content;
@@ -50,9 +29,8 @@ JSON, no markdown fences, matching exactly this shape:
 async function scoreResumeAgainstJob({ resumeContent, jobDescription }) {
   const resumeText = resumeToPlainText(resumeContent);
   const prompt = `RESUME:\n${resumeText}\n\nJOB DESCRIPTION:\n${jobDescription}\n\nReturn ONLY the JSON object described in your instructions.`;
-  const raw = await callClaude(MATCH_SYSTEM, prompt, 900);
-  const cleaned = raw.replace(/^```json\s*|```$/g, '').trim();
-  return JSON.parse(cleaned);
+  const raw = await callGroq(MATCH_SYSTEM, prompt, 900, { jsonMode: true });
+  return JSON.parse(raw);
 }
 
 const COVER_LETTER_SYSTEM = `You are an expert cover letter writer. You write concise
@@ -65,7 +43,7 @@ async function generateCoverLetter({ resumeContent, jobDescription, companyName 
   const prompt = `RESUME:\n${resumeText}\n\nJOB DESCRIPTION:\n${jobDescription}\n\n${
     companyName ? `Company name: ${companyName}\n` : ''
   }Write a tailored cover letter. Return ONLY the letter text, no preamble.`;
-  return callClaude(COVER_LETTER_SYSTEM, prompt, 700);
+  return callGroq(COVER_LETTER_SYSTEM, prompt, 700);
 }
 
 module.exports = { scoreResumeAgainstJob, generateCoverLetter };

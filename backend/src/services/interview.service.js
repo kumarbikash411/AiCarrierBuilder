@@ -1,25 +1,4 @@
-const axios = require('axios');
-
-async function callClaude(systemPrompt, userPrompt, maxTokens = 1200) {
-  const response = await axios.post(
-    'https://api.anthropic.com/v1/messages',
-    {
-      model: 'claude-sonnet-4-6',
-      max_tokens: maxTokens,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userPrompt }],
-    },
-    {
-      headers: {
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-    }
-  );
-  const textBlock = response.data.content.find((b) => b.type === 'text');
-  return textBlock ? textBlock.text.trim() : '';
-}
+const { callGroq } = require('./groq.service');
 
 const INTERVIEW_COACH_SYSTEM = `You are an experienced interview coach. You produce realistic
 interview questions for a specific role, each paired with a short tip on how to structure a
@@ -44,9 +23,8 @@ ${jobDescription ? `Job description:\n${jobDescription}` : ''}
 Mix categories: a few Behavioral, a few Technical or Role-specific, and 1-2 Situational.
 Return ONLY the JSON object described in your instructions.`;
 
-  const raw = await callClaude(INTERVIEW_COACH_SYSTEM, prompt, 1400);
-  const cleaned = raw.replace(/^```json\s*|```$/g, '').trim();
-  return JSON.parse(cleaned);
+  const raw = await callGroq(INTERVIEW_COACH_SYSTEM, prompt, 1400, { jsonMode: true });
+  return JSON.parse(raw);
 }
 
 module.exports = { generateInterviewQuestions };
