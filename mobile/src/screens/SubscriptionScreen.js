@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import RazorpayCheckout from 'react-native-razorpay';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { colors, spacing, radius, typography } from '../theme/tokens';
@@ -14,16 +15,29 @@ export default function SubscriptionScreen() {
 
   async function handleSubscribe() {
     try {
-      const { data } = await api.post('/subscription/create');
+      const { data: order } = await api.post('/subscription/create-order');
+      const payment = await RazorpayCheckout.open({
+        key: order.razorpayKeyId,
+        amount: order.amount,
+        currency: order.currency,
+        name: 'AiCarrierBuilder',
+        description: 'Premium annual plan',
+        order_id: order.order_id,
+        prefill: { name: user?.name || '', email: user?.email || '', contact: user?.phone || '' },
+        theme: { color: colors.accent },
+      });
 
-      Alert.alert(
-        'Payment unavailable',
-        'Razorpay checkout is not available in this Expo Go session. Please open the app in a development build or on a device with the native module installed.'
-      );
-      return;
+      await api.post('/subscription/verify-payment', payment);
+      const { data: updatedStatus } = await api.get('/subscription/status');
+      setStatus(updatedStatus);
+      Alert.alert('Payment successful', 'Your Premium access is active for one year.');
     } catch (err) {
-      if (err?.description) {
-        Alert.alert('Payment not completed', err.description);
+      if (err?.code === 0) {
+        Alert.alert('Payment cancelled', 'No payment was made.');
+      } else if (err?.description) {
+        Alert.alert('Payment failed', err.description);
+      } else if (err?.response?.data?.error) {
+        Alert.alert('Payment error', err.response.data.error);
       } else {
         Alert.alert('Error', 'Could not start checkout. Please try again.');
       }
@@ -36,7 +50,7 @@ export default function SubscriptionScreen() {
       <Text style={styles.price}>₹499 / year</Text>
       <Text style={[typography.caption, { marginBottom: spacing.xl }]}>
         Status: {status?.status || 'Loading…'}
-        {status?.currentPeriodEnd ? ` · renews ${new Date(status.currentPeriodEnd).toLocaleDateString('en-IN')}` : ''}
+        {status?.currentPeriodEnd ? ` · access until ${new Date(status.currentPeriodEnd).toLocaleDateString('en-IN')}` : ''}
       </Text>
 
       <View style={{ marginBottom: spacing.xl }}>
@@ -61,7 +75,7 @@ export default function SubscriptionScreen() {
       </TouchableOpacity>
 
       <Text style={styles.disclaimer}>
-        Payments processed securely via Razorpay. Auto-renews yearly; cancel anytime.
+        Payments are processed securely via Razorpay. Your Premium access lasts one year.
       </Text>
     </View>
   );

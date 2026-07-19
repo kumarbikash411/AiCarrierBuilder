@@ -17,8 +17,6 @@ app.use(helmet());
 app.use(cors());
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 300 }));
 
-// Razorpay webhook needs the RAW body for signature verification
-app.use('/api/subscription/webhook', express.raw({ type: '*/*' }));
 app.use(express.json({ limit: '2mb' }));
 
 app.get('/health', (req, res) => res.json({ ok: true }));

@@ -2,86 +2,70 @@ const express = require('express');
 const prisma = require('../config/db');
 const { requireAuth } = require('../middleware/auth');
 const {
-  getOrCreateCustomer,
-  createAnnualSubscription,
+  razorpay,
+  createOrder,
   verifyPaymentSignature,
-  verifyWebhookSignature,
 } = require('../services/razorpay.service');
 
 const router = express.Router();
+const ANNUAL_PLAN_AMOUNT = 49900;
 
 router.get('/status', requireAuth, async (req, res) => {
   const sub = await prisma.subscription.findUnique({ where: { userId: req.userId } });
   res.json(sub);
 });
 
-router.post('/create', requireAuth, async (req, res) => {
-  const user = await prisma.user.findUnique({ where: { id: req.userId } });
+router.post('/create-order', requireAuth, async (req, res, next) => {
+  try {
+    const order = await createOrder({
+      amount: ANNUAL_PLAN_AMOUNT,
+      currency: 'INR',
+      receipt: `annual_${req.userId.slice(0, 18)}_${Date.now()}`,
+      notes: { userId: req.userId, plan: 'ANNUAL_499' },
+    });
 
-  const customer = await getOrCreateCustomer({ name: user.name, email: user.email, phone: user.phone });
-  const rzpSubscription = await createAnnualSubscription({ customerId: customer.id });
-
-  await prisma.subscription.update({
-    where: { userId: req.userId },
-    data: { razorpayCustomerId: customer.id, razorpaySubscriptionId: rzpSubscription.id },
-  });
-
-  res.json({ subscriptionId: rzpSubscription.id, razorpayKeyId: process.env.RAZORPAY_KEY_ID });
+    res.json({ order_id: order.id, amount: order.amount, currency: order.currency, razorpayKeyId: process.env.RAZORPAY_KEY_ID });
+  } catch (error) {
+    if (error.statusCode === 401) return res.status(401).json({ error: 'Razorpay authentication failed' });
+    if (error.statusCode === 400) return res.status(400).json({ error: error.message });
+    next(error);
+  }
 });
 
-router.post('/verify', requireAuth, async (req, res) => {
-  const { razorpay_payment_id, razorpay_subscription_id, razorpay_signature } = req.body;
-  const valid = verifyPaymentSignature({ razorpay_payment_id, razorpay_subscription_id, razorpay_signature });
-  if (!valid) return res.status(400).json({ error: 'Signature verification failed' });
-
-  const now = new Date();
-  await prisma.subscription.update({
-    where: { userId: req.userId },
-    data: {
-      status: 'ACTIVE',
-      currentPeriodStart: now,
-      currentPeriodEnd: new Date(now.getFullYear() + 1, now.getMonth(), now.getDate()),
-    },
-  });
-
-  res.json({ ok: true });
-});
-
-// Mounted with express.raw() in server.js so the signature check gets the raw body
-router.post('/webhook', async (req, res) => {
-  const signature = req.headers['x-razorpay-signature'];
-  const valid = verifyWebhookSignature(req.body, signature);
-  if (!valid) return res.status(400).json({ error: 'Invalid webhook signature' });
-
-  const event = JSON.parse(req.body.toString());
-  const subEntity = event.payload?.subscription?.entity;
-  if (!subEntity) return res.json({ ok: true });
-
-  const sub = await prisma.subscription.findFirst({ where: { razorpaySubscriptionId: subEntity.id } });
-  if (!sub) return res.json({ ok: true });
-
-  switch (event.event) {
-    case 'subscription.activated':
-    case 'subscription.charged':
-      await prisma.subscription.update({
-        where: { id: sub.id },
-        data: {
-          status: 'ACTIVE',
-          currentPeriodStart: new Date(subEntity.current_start * 1000),
-          currentPeriodEnd: new Date(subEntity.current_end * 1000),
-        },
-      });
-      break;
-    case 'subscription.pending':
-      await prisma.subscription.update({ where: { id: sub.id }, data: { status: 'PAST_DUE' } });
-      break;
-    case 'subscription.cancelled':
-    case 'subscription.completed':
-      await prisma.subscription.update({ where: { id: sub.id }, data: { status: 'CANCELLED' } });
-      break;
+router.post('/verify-payment', requireAuth, async (req, res, next) => {
+  const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
+  if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature) {
+    return res.status(400).json({ error: 'Payment ID, order ID, and signature are required' });
   }
 
-  res.json({ ok: true });
+  try {
+    const order = await razorpay.orders.fetch(razorpay_order_id);
+    if (order.notes?.userId !== req.userId || order.amount !== ANNUAL_PLAN_AMOUNT || order.currency !== 'INR') {
+      return res.status(400).json({ error: 'Order does not belong to this user' });
+    }
+
+    const valid = verifyPaymentSignature({
+      orderId: order.id,
+      razorpay_payment_id,
+      razorpay_signature,
+    });
+    if (!valid) return res.status(400).json({ error: 'Signature verification failed' });
+
+    const now = new Date();
+    await prisma.subscription.update({
+      where: { userId: req.userId },
+      data: {
+        status: 'ACTIVE',
+        currentPeriodStart: now,
+        currentPeriodEnd: new Date(now.getFullYear() + 1, now.getMonth(), now.getDate()),
+      },
+    });
+
+    res.json({ ok: true });
+  } catch (error) {
+    if (error.statusCode === 401) return res.status(401).json({ error: 'Razorpay authentication failed' });
+    next(error);
+  }
 });
 
 module.exports = router;
