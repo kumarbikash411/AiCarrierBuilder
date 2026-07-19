@@ -8,9 +8,9 @@ const { execSync } = require('child_process');
 const authRoutes = require('./routes/auth.routes');
 const resumeRoutes = require('./routes/resume.routes');
 const aiRoutes = require('./routes/ai.routes');
-const subscriptionRoutes = require('./routes/subscription.routes');
 const interviewRoutes = require('./routes/interview.routes');
 const jobmatchRoutes = require('./routes/jobmatch.routes');
+const applicationRoutes = require('./routes/applications.routes');
 
 const app = express();
 
@@ -25,9 +25,9 @@ app.get('/health', (req, res) => res.json({ ok: true }));
 app.use('/api/auth', authRoutes);
 app.use('/api/resumes', resumeRoutes);
 app.use('/api/ai', aiRoutes);
-app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/interview', interviewRoutes);
 app.use('/api/jobmatch', jobmatchRoutes);
+app.use('/api/applications', applicationRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);

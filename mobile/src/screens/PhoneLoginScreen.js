@@ -10,6 +10,7 @@ export default function PhoneLoginScreen({ navigation }) {
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
+  const [referralCode, setReferralCode] = useState('');
   const [busy, setBusy] = useState(false);
 
   async function handleSendOtp() {
@@ -29,7 +30,7 @@ export default function PhoneLoginScreen({ navigation }) {
     if (code.trim().length !== 6) return Alert.alert('Enter the 6-digit code');
     setBusy(true);
     try {
-      await verifyOtp(phone.trim(), code.trim(), name.trim() || undefined);
+      await verifyOtp(phone.trim(), code.trim(), name.trim() || undefined, referralCode.trim() || undefined);
     } catch (err) {
       Alert.alert('Verification failed', err.response?.data?.error || 'Invalid or expired code');
     } finally {
@@ -55,6 +56,7 @@ export default function PhoneLoginScreen({ navigation }) {
             value={phone}
             onChangeText={setPhone}
           />
+          <LabeledInput label="Referral code (optional, new users only)" placeholder="CAREER-XXXXXXXX" autoCapitalize="characters" value={referralCode} onChangeText={setReferralCode} />
           <LabeledInput
             label="Name (only needed if you're new)"
             placeholder="Jane Doe"

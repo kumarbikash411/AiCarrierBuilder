@@ -21,10 +21,25 @@ model User {
   email        String?   @unique
   phone        String?   @unique
   passwordHash String?   // null for phone/OTP-only accounts
+  referralCode String?   @unique
+  referredById String?
+  points       Int       @default(0)
   createdAt    DateTime  @default(now())
 
   resumes      Resume[]
+  applications JobApplication[]
   subscription Subscription?
+}
+
+// A unique record prevents more than one reward for the same new account.
+model ReferralReward {
+  id             String   @id @default(uuid())
+  referrerId     String
+  referredUserId String   @unique
+  pointsAwarded  Int      @default(500)
+  createdAt      DateTime @default(now())
+
+  @@index([referrerId])
 }
 
 model Subscription {
@@ -65,4 +80,30 @@ model Resume {
   updatedAt  DateTime @updatedAt
 
   @@index([userId])
+}
+
+enum ApplicationStatus {
+  SAVED
+  APPLIED
+  INTERVIEWING
+  OFFER
+  REJECTED
+}
+
+model JobApplication {
+  id                String            @id @default(uuid())
+  user              User              @relation(fields: [userId], references: [id])
+  userId            String
+  company           String
+  role              String
+  location          String?
+  applicationUrl    String?
+  notes             String?
+  status            ApplicationStatus @default(SAVED)
+  submittedResumeId String?
+  appliedAt         DateTime?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@index([userId, status])
 }

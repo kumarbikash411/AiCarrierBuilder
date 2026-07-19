@@ -15,6 +15,9 @@ async function sendOtpSms(phone, code) {
   const { MSG91_AUTH_KEY, MSG91_SENDER_ID, MSG91_TEMPLATE_ID } = process.env;
 
   if (!MSG91_AUTH_KEY) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('SMS provider is not configured');
+    }
     console.log(`[DEV MODE] OTP for ${phone}: ${code} (configure MSG91_AUTH_KEY to send real SMS)`);
     return;
   }

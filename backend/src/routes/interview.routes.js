@@ -1,10 +1,9 @@
 const express = require('express');
 const { requireAuth } = require('../middleware/auth');
-const { requireActiveSubscription } = require('../middleware/subscription');
 const { generateInterviewQuestions } = require('../services/interview.service');
 
 const router = express.Router();
-router.use(requireAuth, requireActiveSubscription);
+router.use(requireAuth);
 
 router.post('/questions', async (req, res) => {
   try {

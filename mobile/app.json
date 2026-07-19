@@ -2,20 +2,25 @@
   "expo": {
     "name": "AiCarrierBuilder",
     "slug": "resume-builder-ai",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.resumeai.app"
     },
     "android": {
-      "package": "com.resumeai.app"
+      "package": "com.bikashkumar.resumeai"
     },
     "extra": {
-      "apiBaseUrl": "https://aicarrierbuilder-production.up.railway.app"
-    }
+      "apiBaseUrl": "https://aicarrierbuilder-production.up.railway.app",
+      "eas": {
+        "projectId": "4f4c70a6-a156-48e7-9a45-c049a5d984c2"
+      }
+    },
+    "owner": "bikashai"
   }
 }
-

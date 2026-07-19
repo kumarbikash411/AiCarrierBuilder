@@ -32,11 +32,7 @@ export default function JobMatchScreen() {
       const { data } = await api.post('/jobmatch/score', { resumeId: selectedResumeId, jobDescription });
       setResult(data);
     } catch (err) {
-      if (err.response?.status === 402) {
-        Alert.alert('Subscription needed', err.response.data.error);
-      } else {
-        Alert.alert('Error', 'Could not score this match right now.');
-      }
+      Alert.alert('Error', 'Could not score this match right now.');
     } finally {
       setScoring(false);
     }

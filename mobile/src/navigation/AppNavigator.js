@@ -13,7 +13,9 @@ import ResumeEditorScreen from '../screens/ResumeEditorScreen';
 import PreviewScreen from '../screens/PreviewScreen';
 import InterviewPrepScreen from '../screens/InterviewPrepScreen';
 import JobMatchScreen from '../screens/JobMatchScreen';
-import SubscriptionScreen from '../screens/SubscriptionScreen';
+import JobSearchScreen from '../screens/JobSearchScreen';
+import GovtPrepScreen from '../screens/GovtPrepScreen';
+import ReferralScreen from '../screens/ReferralScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -37,7 +39,9 @@ function MainTabs() {
       <Tab.Screen name="Resumes" component={ResumeListScreen} options={{ headerShown: false, tabBarLabel: 'Resumes' }} />
       <Tab.Screen name="InterviewPrep" component={InterviewPrepScreen} options={{ title: 'Interview Prep', tabBarLabel: 'Interview' }} />
       <Tab.Screen name="JobMatch" component={JobMatchScreen} options={{ title: 'Get Interview Calls', tabBarLabel: 'Job Match' }} />
-      <Tab.Screen name="Subscription" component={SubscriptionScreen} options={{ headerShown: false, tabBarLabel: 'Premium' }} />
+      <Tab.Screen name="Jobs" component={JobSearchScreen} options={{ title: 'Find Jobs', tabBarLabel: 'Jobs' }} />
+      <Tab.Screen name="GovtPrep" component={GovtPrepScreen} options={{ title: 'Government & Bank Prep', tabBarLabel: 'Govt Prep' }} />
+      <Tab.Screen name="Rewards" component={ReferralScreen} options={{ title: 'Refer & Earn', tabBarLabel: 'Rewards' }} />
     </Tab.Navigator>
   );
 }

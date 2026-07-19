@@ -29,8 +29,8 @@ export function AuthProvider({ children }) {
     setUser(data.user);
   }
 
-  async function register(name, email, password) {
-    const { data } = await api.post('/auth/register', { name, email, password });
+  async function register(name, email, password, referralCode) {
+    const { data } = await api.post('/auth/register', { name, email, password, referralCode: referralCode || undefined });
     await AsyncStorage.setItem('authToken', data.token);
     setUser(data.user);
   }
@@ -42,8 +42,8 @@ export function AuthProvider({ children }) {
 
   // Step 2: verifying the code logs the user in (creating the account on
   // first-ever login with this phone number)
-  async function verifyOtp(phone, code, name) {
-    const { data } = await api.post('/auth/otp/verify', { phone, code, name });
+  async function verifyOtp(phone, code, name, referralCode) {
+    const { data } = await api.post('/auth/otp/verify', { phone, code, name, referralCode: referralCode || undefined });
     await AsyncStorage.setItem('authToken', data.token);
     setUser(data.user);
   }

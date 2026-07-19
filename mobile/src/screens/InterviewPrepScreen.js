@@ -26,11 +26,7 @@ export default function InterviewPrepScreen() {
       const { data } = await api.post('/interview/questions', { jobTitle, jobDescription, experienceLevel });
       setQuestions(data.questions);
     } catch (err) {
-      if (err.response?.status === 402) {
-        Alert.alert('Subscription needed', err.response.data.error);
-      } else {
-        Alert.alert('Error', 'Could not generate questions right now.');
-      }
+      Alert.alert('Error', 'Could not generate questions right now.');
     } finally {
       setLoading(false);
     }

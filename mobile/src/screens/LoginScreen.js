@@ -11,6 +11,9 @@ export default function LoginScreen({ navigation }) {
   const [busy, setBusy] = useState(false);
 
   async function handleLogin() {
+    if (!/^\S+@\S+\.\S+$/.test(email.trim()) || !password) {
+      return Alert.alert('Enter your email and password');
+    }
     setBusy(true);
     try {
       await login(email, password);

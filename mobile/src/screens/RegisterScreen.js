@@ -9,12 +9,16 @@ export default function RegisterScreen({ navigation }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [referralCode, setReferralCode] = useState('');
   const [busy, setBusy] = useState(false);
 
   async function handleRegister() {
+    if (name.trim().length < 2) return Alert.alert('Enter your full name');
+    if (!/^\S+@\S+\.\S+$/.test(email.trim())) return Alert.alert('Enter a valid email address');
+    if (password.length < 8) return Alert.alert('Password must be at least 8 characters');
     setBusy(true);
     try {
-      await register(name, email, password);
+      await register(name, email, password, referralCode);
     } catch (err) {
       Alert.alert('Sign up failed', err.response?.data?.error || 'Please try again');
     } finally {
@@ -38,6 +42,7 @@ export default function RegisterScreen({ navigation }) {
         value={email}
         onChangeText={setEmail}
       />
+      <LabeledInput label="Referral code (optional)" placeholder="CAREER-XXXXXXXX" autoCapitalize="characters" value={referralCode} onChangeText={setReferralCode} />
       <LabeledInput
         label="Password"
         placeholder="min 8 characters"

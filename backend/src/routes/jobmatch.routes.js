@@ -1,11 +1,10 @@
 const express = require('express');
 const prisma = require('../config/db');
 const { requireAuth } = require('../middleware/auth');
-const { requireActiveSubscription } = require('../middleware/subscription');
 const { scoreResumeAgainstJob, generateCoverLetter } = require('../services/jobmatch.service');
 
 const router = express.Router();
-router.use(requireAuth, requireActiveSubscription);
+router.use(requireAuth);
 
 async function loadOwnedResume(resumeId, userId) {
   const resume = await prisma.resume.findUnique({ where: { id: resumeId } });
