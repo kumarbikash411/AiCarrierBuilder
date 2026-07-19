@@ -14,7 +14,8 @@
       "package": "com.resumeai.app"
     },
     "extra": {
-      "apiBaseUrl": "https://192.168.1.35/api"
+      "apiBaseUrl": "https://aicarrierbuilder-production.up.railway.app/api"
     }
   }
 }
+
