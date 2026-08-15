@@ -13,6 +13,8 @@ const jobmatchRoutes = require('./routes/jobmatch.routes');
 
 const app = express();
 
+app.set('trust proxy', 1);
+
 app.use(helmet());
 app.use(cors());
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 300 }));
