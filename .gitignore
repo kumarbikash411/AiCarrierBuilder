@@ -3,3 +3,13 @@ node_modules/
 .expo-shared/
 .DS_Store
 *.log
+
+# IDE
+.idea/
+
+# Credentials and Keys
+*.jks
+*.pem
+credentials.json
+mobile/credentials/
+.env
