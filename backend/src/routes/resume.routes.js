@@ -3,7 +3,7 @@ const path = require('path');
 const multer = require('multer');
 const prisma = require('../config/db');
 const { requireAuth } = require('../middleware/auth');
-const { scoreAndStructureResume } = require('../services/ai.service');
+const { scoreAndStructureResume, fixResumeWithAI } = require('../services/ai.service');
 const { PDFParse } = require('pdf-parse');
 const mammoth = require('mammoth');
 
@@ -92,6 +92,23 @@ router.get('/', async (req, res) => {
     select: { id: true, title: true, template: true, updatedAt: true },
   });
   res.json(resumes);
+});
+
+router.post('/:id/ai-fix', async (req, res) => {
+  const resume = await prisma.resume.findUnique({ where: { id: req.params.id } });
+  if (!resume || resume.userId !== req.userId) return res.status(404).json({ error: 'Not found' });
+  try {
+    const improvements = resume.content?.aiReview?.improvements || [];
+    const content = await fixResumeWithAI(resume.content, improvements);
+    const fixed = await prisma.resume.create({
+      data: { userId: req.userId, title: `${resume.title} (AI improved)`.slice(0, 140), template: resume.template, content },
+      select: { id: true, title: true, template: true, updatedAt: true },
+    });
+    res.status(201).json({ resume: fixed });
+  } catch (err) {
+    console.error('Resume AI fix failed:', err.message);
+    res.status(502).json({ error: 'Could not improve this resume right now. Please try again later.' });
+  }
 });
 
 router.get('/:id', async (req, res) => {
