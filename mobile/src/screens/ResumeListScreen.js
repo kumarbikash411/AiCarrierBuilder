@@ -71,11 +71,28 @@ export default function ResumeListScreen({ navigation }) {
       ].filter(Boolean).join('\n\n');
 
       Alert.alert(`AI resume score: ${review.score}/100`, feedback, [
+        { text: 'Fix with AI', onPress: () => fixImported(data.resume.id) },
         { text: 'Open imported resume', onPress: () => navigation.navigate('Editor', { resumeId: data.resume.id }) },
         { text: 'Close', style: 'cancel' },
       ]);
     } catch (err) {
       Alert.alert('Could not import resume', err.response?.data?.error || 'Check your connection and try again.');
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  async function fixImported(id) {
+    setImporting(true);
+    try {
+      const { data } = await api.post(`/resumes/${id}/ai-fix`, null, { timeout: 120000 });
+      setResumes((prev) => [data.resume, ...prev]);
+      Alert.alert('Resume improved', 'Saved as a new copy. Your original is unchanged.', [
+        { text: 'Open', onPress: () => navigation.navigate('Editor', { resumeId: data.resume.id }) },
+        { text: 'Close', style: 'cancel' },
+      ]);
+    } catch (err) {
+      Alert.alert('Could not improve resume', err.response?.data?.error || 'Check your connection and try again.');
     } finally {
       setImporting(false);
     }
