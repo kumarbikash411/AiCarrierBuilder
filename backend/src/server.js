@@ -13,6 +13,8 @@ const jobmatchRoutes = require('./routes/jobmatch.routes');
 const applicationRoutes = require('./routes/applications.routes');
 
 const app = express();
+// Behind Railway's proxy: use the real client IP (X-Forwarded-For) for rate limiting.
+app.set('trust proxy', 1);
 
 app.use(helmet());
 app.use(cors());
