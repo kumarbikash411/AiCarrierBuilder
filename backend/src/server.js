@@ -22,12 +22,16 @@ app.use(express.json({ limit: '2mb' }));
 
 app.get('/health', (req, res) => res.json({ ok: true }));
 
-app.use('/api/auth', authRoutes);
-app.use('/api/resumes', resumeRoutes);
-app.use('/api/ai', aiRoutes);
-app.use('/api/interview', interviewRoutes);
-app.use('/api/jobmatch', jobmatchRoutes);
-app.use('/api/applications', applicationRoutes);
+// Mounted under /api and, for already-released mobile builds whose base URL
+// has no /api suffix, at the root as well.
+for (const prefix of ['/api', '']) {
+  app.use(`${prefix}/auth`, authRoutes);
+  app.use(`${prefix}/resumes`, resumeRoutes);
+  app.use(`${prefix}/ai`, aiRoutes);
+  app.use(`${prefix}/interview`, interviewRoutes);
+  app.use(`${prefix}/jobmatch`, jobmatchRoutes);
+  app.use(`${prefix}/applications`, applicationRoutes);
+}
 
 app.use((err, req, res, next) => {
   console.error(err);

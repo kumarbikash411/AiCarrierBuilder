@@ -16,7 +16,7 @@
       "package": "com.bikashkumar.resumeai"
     },
     "extra": {
-      "apiBaseUrl": "https://aicarrierbuilder-production.up.railway.app",
+      "apiBaseUrl": "https://aicarrierbuilder-production.up.railway.app/api",
       "eas": {
         "projectId": "4f4c70a6-a156-48e7-9a45-c049a5d984c2"
       }
