@@ -3,11 +3,17 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { z } = require('zod');
+const { rateLimit } = require('express-rate-limit');
 const prisma = require('../config/db');
 const { requireAuth } = require('../middleware/auth');
 const { generateOtp, sendOtpSms } = require('../services/otp.service');
+const { sendPasswordResetCode } = require('../services/email.service');
 
 const router = express.Router();
+
+function asyncHandler(handler) {
+  return (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
+}
 
 function normaliseEmail(email) {
   return email.trim().toLowerCase();
@@ -108,6 +114,110 @@ router.post('/login', async (req, res) => {
   res.json({ token: signToken(user.id), user: safeUser(user) });
 });
 
+// ---------- Email password recovery ----------
+
+const resetSendLimit = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 5,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { error: 'Too many reset code requests. Please try again later.' },
+});
+const resetCompleteLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { error: 'Too many attempts. Please request a new code later.' },
+});
+
+const resetEmailSchema = z.object({ email: z.string().email() });
+router.post('/password-reset/email/send', resetSendLimit, asyncHandler(async (req, res) => {
+  const parsed = resetEmailSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Enter a valid email address' });
+
+  // Return the same response whether or not the account exists.
+  if (!process.env.RESEND_API_KEY || !process.env.RESET_EMAIL_FROM) {
+    return res.status(503).json({ error: 'Password recovery email is not configured yet' });
+  }
+
+  const email = normaliseEmail(parsed.data.email);
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user?.passwordHash) {
+    return res.json({ ok: true, message: 'If an account exists for this email, a reset code has been sent.' });
+  }
+
+  const code = crypto.randomInt(0, 1000000).toString().padStart(6, '0');
+  const otp = await prisma.$transaction(async (tx) => {
+    await tx.otpCode.updateMany({
+      where: { email, purpose: 'PASSWORD_RESET', consumed: false },
+      data: { consumed: true },
+    });
+    return tx.otpCode.create({
+      data: { email, purpose: 'PASSWORD_RESET', code, expiresAt: new Date(Date.now() + 10 * 60 * 1000) },
+    });
+  });
+
+  try {
+    await sendPasswordResetCode(email, code);
+  } catch (err) {
+    await prisma.otpCode.update({ where: { id: otp.id }, data: { consumed: true } }).catch(() => {});
+    console.error('Password reset email failed:', err.response?.data || err.message);
+    return res.status(err.code === 'EMAIL_NOT_CONFIGURED' ? 503 : 502).json({
+      error: 'Could not send a reset code right now. Please try again later.',
+    });
+  }
+
+  res.json({ ok: true, message: 'If an account exists for this email, a reset code has been sent.' });
+}));
+
+const completeResetSchema = z.object({
+  email: z.string().email(),
+  code: z.string().regex(/^\d{6}$/),
+  password: z.string().min(8),
+});
+router.post('/password-reset/email/complete', resetCompleteLimit, asyncHandler(async (req, res) => {
+  const parsed = completeResetSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Enter a valid email, 6-digit code, and password of at least 8 characters' });
+
+  const email = normaliseEmail(parsed.data.email);
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user?.passwordHash) return res.status(400).json({ error: 'Invalid or expired reset code' });
+
+  const otp = await prisma.otpCode.findFirst({
+    where: {
+      email,
+      purpose: 'PASSWORD_RESET',
+      code: parsed.data.code,
+      consumed: false,
+      expiresAt: { gt: new Date() },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+  if (!otp) return res.status(400).json({ error: 'Invalid or expired reset code' });
+
+  const passwordHash = await bcrypt.hash(parsed.data.password, 12);
+  try {
+    await prisma.$transaction(async (tx) => {
+      const consumed = await tx.otpCode.updateMany({
+        where: { id: otp.id, consumed: false, expiresAt: { gt: new Date() } },
+        data: { consumed: true },
+      });
+      if (consumed.count !== 1) {
+        const error = new Error('Invalid or expired reset code');
+        error.statusCode = 400;
+        throw error;
+      }
+      await tx.user.update({ where: { id: user.id }, data: { passwordHash } });
+    });
+  } catch (err) {
+    if (err.statusCode) return res.status(err.statusCode).json({ error: err.message });
+    throw err;
+  }
+
+  res.json({ ok: true, message: 'Password reset successfully. You can now log in.' });
+}));
+
 // ---------- Phone + OTP auth ----------
 
 const phoneSchema = z.object({ phone: z.string().min(10).max(15) });
@@ -130,7 +240,7 @@ router.post('/otp/send', async (req, res) => {
 
   // Only make a code valid after the SMS provider has accepted delivery.
   await prisma.otpCode.create({
-    data: { phone, code, expiresAt: new Date(Date.now() + 5 * 60 * 1000) },
+    data: { phone, purpose: 'LOGIN', code, expiresAt: new Date(Date.now() + 5 * 60 * 1000) },
   });
 
   res.json({ ok: true, message: 'OTP sent' });
@@ -152,7 +262,7 @@ router.post('/otp/verify', async (req, res) => {
   const phone = normalisePhone(parsed.data.phone);
 
   const otp = await prisma.otpCode.findFirst({
-    where: { phone, code, consumed: false, expiresAt: { gt: new Date() } },
+    where: { phone, purpose: 'LOGIN', code, consumed: false, expiresAt: { gt: new Date() } },
     orderBy: { createdAt: 'desc' },
   });
 

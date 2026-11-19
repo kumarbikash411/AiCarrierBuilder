@@ -20,7 +20,11 @@ export default function RegisterScreen({ navigation }) {
     try {
       await register(name, email, password, referralCode);
     } catch (err) {
-      Alert.alert('Sign up failed', err.response?.data?.error || 'Please try again');
+      Alert.alert(
+        'Sign up failed',
+        err.response?.data?.error ||
+          (err.request ? 'Could not reach the server. Check your internet connection or contact the app developer.' : 'Please try again')
+      );
     } finally {
       setBusy(false);
     }

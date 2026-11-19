@@ -60,13 +60,16 @@ model Subscription {
 // Short-lived OTP codes for phone login. Rows are deleted/expired after use.
 model OtpCode {
   id        String   @id @default(uuid())
-  phone     String
+  phone     String?
+  email     String?
+  purpose   String   @default("LOGIN")
   code      String
   expiresAt DateTime
   consumed  Boolean  @default(false)
   createdAt DateTime @default(now())
 
   @@index([phone])
+  @@index([email, purpose])
 }
 
 model Resume {

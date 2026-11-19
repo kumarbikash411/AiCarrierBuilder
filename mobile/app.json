@@ -13,7 +13,8 @@
       "bundleIdentifier": "com.resumeai.app"
     },
     "android": {
-      "package": "com.bikashkumar.resumeai"
+      "package": "com.bikashkumar.resumeai",
+      "versionCode": 2
     },
     "extra": {
       "apiBaseUrl": "https://aicarrierbuilder-production.up.railway.app/api",

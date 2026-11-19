@@ -8,6 +8,7 @@ import { colors } from '../theme/tokens';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import PhoneLoginScreen from '../screens/PhoneLoginScreen';
+import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import ResumeListScreen from '../screens/ResumeListScreen';
 import ResumeEditorScreen from '../screens/ResumeEditorScreen';
 import PreviewScreen from '../screens/PreviewScreen';
@@ -64,6 +65,7 @@ export default function AppNavigator() {
             <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
             <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />
             <Stack.Screen name="PhoneLogin" component={PhoneLoginScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ title: 'Reset Password' }} />
           </>
         )}
       </Stack.Navigator>

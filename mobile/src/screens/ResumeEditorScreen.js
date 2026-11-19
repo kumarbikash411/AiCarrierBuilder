@@ -168,6 +168,21 @@ export default function ResumeEditorScreen({ route, navigation }) {
     <ScrollView style={styles.container} contentContainerStyle={{ padding: spacing.lg, paddingBottom: 60 }}>
       <LabeledInput label="Resume title" value={title} onChangeText={setTitle} placeholder="e.g. Product Manager Resume" />
 
+      {content.aiReview ? (
+        <Card>
+          <SectionHeader title={`AI Resume Score: ${content.aiReview.score}/100`} subtitle="An estimate of clarity, evidence, and completeness—not a hiring prediction" />
+          <Text style={[typography.body, { color: colors.textSecondary }]}>{content.aiReview.scoreSummary}</Text>
+          {content.aiReview.improvements?.length ? (
+            <View style={{ marginTop: spacing.md }}>
+              <Text style={typography.label}>SUGGESTED IMPROVEMENTS</Text>
+              {content.aiReview.improvements.map((item, index) => (
+                <Text key={`${index}-${item}`} style={[typography.body, { color: colors.textSecondary, marginTop: 6 }]}>• {item}</Text>
+              ))}
+            </View>
+          ) : null}
+        </Card>
+      ) : null}
+
       <View style={styles.templateRow}>
         {['modern', 'classic'].map((t) => (
           <TouchableOpacity

@@ -18,7 +18,11 @@ export default function LoginScreen({ navigation }) {
     try {
       await login(email, password);
     } catch (err) {
-      Alert.alert('Login failed', err.response?.data?.error || 'Please try again');
+      Alert.alert(
+        'Login failed',
+        err.response?.data?.error ||
+          (err.request ? 'Could not reach the server. Check your internet connection or contact the app developer.' : 'Please try again')
+      );
     } finally {
       setBusy(false);
     }
@@ -48,6 +52,9 @@ export default function LoginScreen({ navigation }) {
       <TouchableOpacity onPress={() => navigation.navigate('Register')}>
         <Text style={styles.link}>New here? Create an account</Text>
       </TouchableOpacity>
+      <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
+        <Text style={styles.forgotLink}>Forgot password?</Text>
+      </TouchableOpacity>
 
       <View style={styles.divider}>
         <View style={styles.dividerLine} />
@@ -73,6 +80,7 @@ const styles = StyleSheet.create({
   },
   buttonText: { color: colors.white, textAlign: 'center', fontWeight: '700' },
   link: { color: colors.accentAlt, textAlign: 'center', marginTop: spacing.lg },
+  forgotLink: { color: colors.accentAlt, textAlign: 'center', marginTop: spacing.md, textDecorationLine: 'underline' },
   divider: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.xl, marginBottom: spacing.md },
   dividerLine: { flex: 1, height: 1, backgroundColor: colors.border },
   dividerText: { color: colors.textMuted, marginHorizontal: 12, fontSize: 12 },
