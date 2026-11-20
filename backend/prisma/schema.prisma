@@ -25,6 +25,7 @@ model User {
   referredById String?
   points       Int       @default(0)
   createdAt    DateTime  @default(now())
+  welcomeEmailSentAt DateTime?
 
   resumes      Resume[]
   applications JobApplication[]
