@@ -29,7 +29,7 @@ function escapeHtml(value) {
 
 async function sendMail({ to, subject, text, html }) {
   await getTransporter().sendMail({
-    from: `"AiCarrierBuilder" <${process.env.GMAIL_USER}>`,
+    from: `"AiCarrier" <${process.env.GMAIL_USER}>`,
     to,
     subject,
     text,
@@ -47,11 +47,52 @@ async function sendPasswordResetCode(email, code) {
 }
 
 async function sendWelcomeEmail(email, name) {
+  const appUrl = process.env.APP_URL || 'https://aicarrierbuilder-production.up.railway.app';
+  const safeName = escapeHtml(name);
+  const preview = 'Your AI resume and job prep partner is ready.';
+  const steps = [
+    ['Build your resume with AI.', 'Answer a few questions and get a professional resume in minutes.'],
+    ['Fix your existing resume.', 'Upload it and get AI suggestions on wording, formatting and missing keywords.'],
+    ['Apply with confidence.', 'Get help tailoring your resume and applications to each job.'],
+    ['Prepare for your exam or interview.', 'Practice for IT interviews, bank exams and government job tests.'],
+  ];
+
+  const text = [
+    `Hi ${name},`,
+    '',
+    'Welcome to AiCarrier! We\u2019re glad you\u2019re here.',
+    '',
+    'Whether you\u2019re applying for an IT job, a bank exam or a government post, AiCarrier helps you get ready faster. Here\u2019s how to start:',
+    '',
+    ...steps.map(([t, d]) => `- ${t} ${d}`),
+    '',
+    `Open AiCarrier: ${appUrl}`,
+    '',
+    'Tip: if you already have a resume, upload it first. It takes about a minute, and you\u2019ll see exactly what to improve.',
+    '',
+    'Need help? Just reply to this email.',
+    '',
+    'All the best,',
+    'Team AiCarrier',
+  ].join('\n');
+
+  const html = `<div style="display:none;max-height:0;overflow:hidden;opacity:0">${preview}</div>
+<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;color:#1f2937;line-height:1.6">
+<p>Hi ${safeName},</p>
+<p>Welcome to AiCarrier! We\u2019re glad you\u2019re here.</p>
+<p>Whether you\u2019re applying for an IT job, a bank exam or a government post, AiCarrier helps you get ready faster. Here\u2019s how to start:</p>
+<ul>${steps.map(([t, d]) => `<li><strong>${t}</strong> ${d}</li>`).join('')}</ul>
+<p style="margin:28px 0"><a href="${appUrl}" style="background:#2563eb;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:6px;font-weight:bold;display:inline-block">Open AiCarrier</a></p>
+<p><strong>Tip:</strong> if you already have a resume, upload it first. It takes about a minute, and you\u2019ll see exactly what to improve.</p>
+<p>Need help? Just reply to this email.</p>
+<p>All the best,<br>Team AiCarrier</p>
+</div>`;
+
   await sendMail({
     to: email,
-    subject: 'Welcome to AiCarrierBuilder',
-    text: `Hi ${name}, welcome to AiCarrierBuilder! Build your resume, prep for interviews and match jobs with AI.`,
-    html: `<p>Hi ${escapeHtml(name)},</p><p>Welcome to AiCarrierBuilder! Build your resume, prep for interviews and match jobs with AI.</p>`,
+    subject: 'Welcome to AiCarrier, let\u2019s build your career \ud83c\udfaf',
+    text,
+    html,
   });
 }
 
