@@ -14,6 +14,8 @@ export default function ResumeEditorScreen({ route, navigation }) {
   const [title, setTitle] = useState('');
   const [template, setTemplate] = useState('modern');
   const [content, setContent] = useState(null);
+  const [jobDescription, setJobDescription] = useState('');
+  const [tailoredSummary, setTailoredSummary] = useState('');
   const [aiBusy, setAiBusy] = useState(null); // tracks which AI action is running
 
   useEffect(() => {
@@ -73,6 +75,26 @@ export default function ResumeEditorScreen({ route, navigation }) {
       setContent((c) => ({ ...c, summary: data.summary }));
     } catch {
       Alert.alert('AI unavailable', 'Could not generate summary right now.');
+    } finally {
+      setAiBusy(null);
+    }
+  }
+
+  async function handleTailorSummary() {
+    if (!jobDescription.trim()) return Alert.alert('Add a job description first');
+    setAiBusy('tailor');
+    try {
+      const experienceText = content.experience
+        .map((item) => `${item.jobTitle || 'Role'} at ${item.company || 'company not listed'}: ${(item.bullets || []).filter(Boolean).join('; ')}`)
+        .join('\n');
+      const { data } = await api.post('/ai/tailor-to-job', {
+        resumeSummary: content.summary,
+        experienceText,
+        jobDescription: jobDescription.trim(),
+      });
+      setTailoredSummary(data.summary);
+    } catch {
+      Alert.alert('AI unavailable', 'Could not tailor your summary right now. Please try again.');
     } finally {
       setAiBusy(null);
     }
@@ -209,8 +231,31 @@ export default function ResumeEditorScreen({ route, navigation }) {
 
       <Card>
         <SectionHeader title="Summary" subtitle="A 3-4 sentence pitch at the top of your resume" />
-        <LabeledInput multiline value={content.summary} onChangeText={(v) => setContent((c) => ({ ...c, summary: v }))} placeholder="Write a rough draft, or let AI generate one from your info below" />
+        <LabeledInput multiline value={content.summary} onChangeText={(v) => { setContent((c) => ({ ...c, summary: v })); setTailoredSummary(''); }} placeholder="Write a rough draft, or let AI generate one from your info below" />
         <AIAssistButton label="Generate with AI" onPress={handleGenerateSummary} loading={aiBusy === 'summary'} />
+      </Card>
+
+      <Card>
+        <SectionHeader title="Tailor to a job" subtitle="Get a summary matched to this role using only your existing experience" />
+        <LabeledInput
+          label="Job description"
+          multiline
+          maxLength={6000}
+          value={jobDescription}
+          onChangeText={(value) => { setJobDescription(value); setTailoredSummary(''); }}
+          placeholder="Paste the job description here"
+        />
+        <AIAssistButton label="Tailor summary with AI" onPress={handleTailorSummary} loading={aiBusy === 'tailor'} />
+        {tailoredSummary ? (
+          <View style={{ marginTop: spacing.md }}>
+            <Text style={[typography.label, { marginBottom: 6 }]}>SUGGESTED SUMMARY</Text>
+            <Text style={[typography.body, { color: colors.textSecondary }]}>{tailoredSummary}</Text>
+            <AIAssistButton
+              label="Use this summary"
+              onPress={() => { setContent((c) => ({ ...c, summary: tailoredSummary })); setTailoredSummary(''); }}
+            />
+          </View>
+        ) : null}
       </Card>
 
       <Card>
