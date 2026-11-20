@@ -92,7 +92,9 @@ router.post('/register', async (req, res) => {
     const user = await prisma.$transaction((tx) => createReferredUser(tx, { name, email, passwordHash }, parsed.data.referralCode));
     // Fire and forget: a mail failure must not fail signup.
     if (isEmailConfigured()) {
-      sendWelcomeEmail(email, name).catch((err) => console.error('Welcome email failed:', err.message));
+      sendWelcomeEmail(email, name)
+        .then(() => prisma.user.update({ where: { id: user.id }, data: { welcomeEmailSentAt: new Date() } }))
+        .catch((err) => console.error('Welcome email failed:', err.message));
     }
     return res.status(201).json({ token: signToken(user.id), user: safeUser(user) });
   } catch (err) {
