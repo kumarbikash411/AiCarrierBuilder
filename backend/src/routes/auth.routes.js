@@ -7,7 +7,7 @@ const { rateLimit } = require('express-rate-limit');
 const prisma = require('../config/db');
 const { requireAuth } = require('../middleware/auth');
 const { generateOtp, sendOtpSms } = require('../services/otp.service');
-const { sendPasswordResetCode } = require('../services/email.service');
+const { isEmailConfigured, sendPasswordResetCode, sendWelcomeEmail } = require('../services/email.service');
 
 const router = express.Router();
 
@@ -90,6 +90,10 @@ router.post('/register', async (req, res) => {
   const passwordHash = await bcrypt.hash(password, 12);
   try {
     const user = await prisma.$transaction((tx) => createReferredUser(tx, { name, email, passwordHash }, parsed.data.referralCode));
+    // Fire and forget: a mail failure must not fail signup.
+    if (isEmailConfigured()) {
+      sendWelcomeEmail(email, name).catch((err) => console.error('Welcome email failed:', err.message));
+    }
     return res.status(201).json({ token: signToken(user.id), user: safeUser(user) });
   } catch (err) {
     if (err.statusCode) return res.status(err.statusCode).json({ error: err.message });
@@ -137,7 +141,7 @@ router.post('/password-reset/email/send', resetSendLimit, asyncHandler(async (re
   if (!parsed.success) return res.status(400).json({ error: 'Enter a valid email address' });
 
   // Return the same response whether or not the account exists.
-  if (!process.env.RESEND_API_KEY || !process.env.RESET_EMAIL_FROM) {
+  if (!isEmailConfigured()) {
     return res.status(503).json({ error: 'Password recovery email is not configured yet' });
   }
 
