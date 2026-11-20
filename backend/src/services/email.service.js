@@ -96,4 +96,41 @@ async function sendWelcomeEmail(email, name) {
   });
 }
 
-module.exports = { isEmailConfigured, sendPasswordResetCode, sendWelcomeEmail };
+const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.bikashkumar.resumeai';
+
+async function sendUpdateNoticeEmail(email, name) {
+  const safeName = escapeHtml(name);
+  const features = [
+    'Search IT, government and bank jobs in one place',
+    'Apply links for government and bank vacancies',
+    'A new interview question bank with answer tips',
+  ];
+  await sendMail({
+    to: email,
+    subject: 'Update AiCarrier on Google Play for new features',
+    text: [
+      `Hi ${name},`,
+      '',
+      'A new version of AiCarrier is available on the Google Play Store. Please update the app to get:',
+      '',
+      ...features.map((f) => `- ${f}`),
+      '',
+      `Update now: ${PLAY_STORE_URL}`,
+      '',
+      'Need help? Just reply to this email.',
+      '',
+      'All the best,',
+      'Team AiCarrier',
+    ].join('\n'),
+    html: `<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;color:#1f2937;line-height:1.6">
+<p>Hi ${safeName},</p>
+<p>A new version of AiCarrier is available on the Google Play Store. Please update the app to get:</p>
+<ul>${features.map((f) => `<li>${f}</li>`).join('')}</ul>
+<p style="margin:28px 0"><a href="${PLAY_STORE_URL}" style="background:#2563eb;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:6px;font-weight:bold;display:inline-block">Update on Google Play</a></p>
+<p>Need help? Just reply to this email.</p>
+<p>All the best,<br>Team AiCarrier</p>
+</div>`,
+  });
+}
+
+module.exports = { isEmailConfigured, sendPasswordResetCode, sendWelcomeEmail, sendUpdateNoticeEmail };

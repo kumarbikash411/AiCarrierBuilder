@@ -26,6 +26,7 @@ model User {
   points       Int       @default(0)
   createdAt    DateTime  @default(now())
   welcomeEmailSentAt DateTime?
+  updateNoticeSentAt DateTime?
 
   resumes      Resume[]
   applications JobApplication[]
