@@ -1,5 +1,8 @@
 const nodemailer = require('nodemailer');
 
+// Override with PLAY_STORE_URL if the listing URL ever changes.
+const PLAY_STORE_URL = process.env.PLAY_STORE_URL || 'https://play.google.com/store/apps/details?id=com.bikashkumar.resumeai';
+
 let transporter;
 
 function isEmailConfigured() {
@@ -47,7 +50,7 @@ async function sendPasswordResetCode(email, code) {
 }
 
 async function sendWelcomeEmail(email, name) {
-  const appUrl = process.env.APP_URL || 'https://aicarrierbuilder-production.up.railway.app';
+  const appUrl = PLAY_STORE_URL;
   const safeName = escapeHtml(name);
   const preview = 'Your AI resume and job prep partner is ready.';
   const steps = [
@@ -66,7 +69,7 @@ async function sendWelcomeEmail(email, name) {
     '',
     ...steps.map(([t, d]) => `- ${t} ${d}`),
     '',
-    `Open AiCarrier: ${appUrl}`,
+    `Open AiCarrier on Google Play: ${appUrl}`,
     '',
     'Tip: if you already have a resume, upload it first. It takes about a minute, and you\u2019ll see exactly what to improve.',
     '',
@@ -95,8 +98,6 @@ async function sendWelcomeEmail(email, name) {
     html,
   });
 }
-
-const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.bikashkumar.resumeai';
 
 async function sendUpdateNoticeEmail(email, name) {
   const safeName = escapeHtml(name);
