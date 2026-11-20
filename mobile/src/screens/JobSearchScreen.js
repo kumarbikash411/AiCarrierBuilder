@@ -14,6 +14,17 @@ const SITES = [
   { name: 'Naukri', host: 'naukri.com/' },
   { name: 'Indeed', host: 'indeed.com/jobs?q=' },
 ];
+const GOVT_SITES = [
+  { name: 'FreeJobAlert Govt', url: 'https://www.freejobalert.com/government-jobs/' },
+  { name: 'Employment News', url: 'https://www.employmentnews.gov.in/' },
+  { name: 'NCS Portal', url: 'https://www.ncs.gov.in/' },
+];
+const BANK_SITES = [
+  { name: 'FreeJobAlert Bank', url: 'https://www.freejobalert.com/bank-jobs/' },
+  { name: 'IBPS', url: 'https://www.ibps.in/' },
+  { name: 'SBI Careers', url: 'https://sbi.co.in/web/careers/current-openings' },
+];
+const JOB_TYPES = ['IT jobs', 'Government jobs', 'Bank jobs'];
 const STATUS = {
   SAVED: 'Saved',
   APPLIED: 'Applied',
@@ -29,6 +40,7 @@ function normaliseUrl(url) {
 
 export default function JobSearchScreen() {
   const [query, setQuery] = useState('');
+  const [jobType, setJobType] = useState(JOB_TYPES[0]);
   const [applications, setApplications] = useState([]);
   const [resumes, setResumes] = useState([]);
   const [company, setCompany] = useState('');
@@ -53,6 +65,7 @@ export default function JobSearchScreen() {
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   async function search(site) {
+    if (site.url) return Linking.openURL(site.url);
     const keywords = query.trim() || 'jobs';
     const url = site.name === 'Naukri'
       ? `https://www.naukri.com/${encodeURIComponent(keywords).replace(/%20/g, '-')}-jobs`
@@ -113,9 +126,12 @@ export default function JobSearchScreen() {
 
       <Card>
         <Text style={[typography.label, { marginBottom: 8 }]}>SEARCH JOB BOARDS</Text>
-        <LabeledInput label="Role or keywords" value={query} onChangeText={setQuery} placeholder="e.g. React Native developer" />
+        <View style={[styles.siteRow, { marginBottom: spacing.md }]}>
+          {JOB_TYPES.map((type) => <TouchableOpacity key={type} onPress={() => setJobType(type)} style={[styles.resumeChip, jobType === type && styles.resumeChipActive]}><Text style={[styles.resumeText, jobType === type && styles.resumeTextActive]}>{type}</Text></TouchableOpacity>)}
+        </View>
+        {jobType === 'IT jobs' ? <LabeledInput label="Role or keywords" value={query} onChangeText={setQuery} placeholder="e.g. React Native developer" /> : null}
         <View style={styles.siteRow}>
-          {SITES.map((site) => <TouchableOpacity key={site.name} style={styles.outlineBtn} onPress={() => search(site)}><Text style={styles.outlineText}>{site.name}</Text></TouchableOpacity>)}
+          {(jobType === 'IT jobs' ? SITES : jobType === 'Government jobs' ? GOVT_SITES : BANK_SITES).map((site) => <TouchableOpacity key={site.name} style={styles.outlineBtn} onPress={() => search(site)}><Text style={styles.outlineText}>{site.name}</Text></TouchableOpacity>)}
         </View>
       </Card>
 

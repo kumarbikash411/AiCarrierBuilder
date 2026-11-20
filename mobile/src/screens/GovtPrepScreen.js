@@ -10,6 +10,15 @@ const OFFICIAL_ALERTS = [
   { name: 'UPSC recruitment', url: 'https://www.upsc.gov.in/recruitment/recruitment-advertisement' },
 ];
 
+const APPLY_LINKS = [
+  { name: 'Bank jobs (FreeJobAlert)', url: 'https://www.freejobalert.com/bank-jobs/' },
+  { name: 'Government jobs (FreeJobAlert)', url: 'https://www.freejobalert.com/government-jobs/' },
+  { name: 'Employment News', url: 'https://www.employmentnews.gov.in/' },
+  { name: 'National Career Service', url: 'https://www.ncs.gov.in/' },
+  { name: 'IBPS apply', url: 'https://www.ibps.in/' },
+  { name: 'SBI apply', url: 'https://sbi.co.in/web/careers/current-openings' },
+];
+
 const BANK_TOPICS = [
   ['Quantitative aptitude', 'Simplification, number series, percentage, ratio, averages, profit & loss, time-work, DI.'],
   ['Reasoning', 'Puzzles, seating arrangement, syllogism, inequalities, coding-decoding, data sufficiency.'],
@@ -33,7 +42,7 @@ function TopicList({ topics }) {
  ));
 }
 
-export default function GovtPrepScreen() {
+export default function GovtPrepScreen({ navigation }) {
   async function openOfficialAlert(item) {
     try {
       await Linking.openURL(item.url);
@@ -56,6 +65,23 @@ export default function GovtPrepScreen() {
           ))}
         </View>
         <Text style={[typography.caption, { marginTop: spacing.md }]}>These links open the latest official notice boards; the app does not collect application fees or represent an exam authority.</Text>
+      </Card>
+
+      <Card>
+        <SectionHeader title="Apply for government & bank jobs" subtitle="Open the application page, then track it under Jobs." />
+        <View style={styles.alertGrid}>
+          {APPLY_LINKS.map((item) => (
+            <TouchableOpacity key={item.name} style={styles.alertButton} onPress={() => openOfficialAlert(item)}>
+              <Text style={styles.alertText}>{item.name} ↗</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <TouchableOpacity style={styles.primaryBtn} onPress={() => navigation?.navigate('Jobs')}>
+          <Text style={styles.primaryText}>Track my applications</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.primaryBtn, { marginTop: spacing.sm }]} onPress={() => navigation?.navigate('InterviewPrep')}>
+          <Text style={styles.primaryText}>Practice interview questions</Text>
+        </TouchableOpacity>
       </Card>
 
       <Card>
@@ -84,4 +110,6 @@ const styles = StyleSheet.create({
   alertText: { color: colors.accentAlt, fontSize: 12, fontWeight: '700' },
   topic: { borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.md, marginTop: spacing.md },
   plan: { lineHeight: 23 },
+  primaryBtn: { backgroundColor: colors.accent, borderRadius: radius.md, padding: 14, marginTop: spacing.md },
+  primaryText: { color: colors.white, textAlign: 'center', fontWeight: '700' },
 });
