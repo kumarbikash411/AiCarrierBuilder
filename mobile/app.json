@@ -14,7 +14,7 @@
     },
     "android": {
       "package": "com.bikashkumar.resumeai",
-      "versionCode": 3
+      "versionCode": 4
     },
     "extra": {
       "apiBaseUrl": "https://aicarrierbuilder-production.up.railway.app/api",
