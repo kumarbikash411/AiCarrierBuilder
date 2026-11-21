@@ -143,4 +143,44 @@ async function sendUpdateNoticeEmail(email, name) {
   });
 }
 
-module.exports = { isEmailConfigured, sendPasswordResetCode, sendLoginCode, sendWelcomeEmail, sendUpdateNoticeEmail };
+const LOUNGE_URL = process.env.LOUNGE_REMOTE_URL || 'https://play.google.com/store/apps/details?id=com.loungeremote';
+
+async function sendLoungePromoEmail(email, name) {
+  const safeName = escapeHtml(name);
+  const features = [
+    ['Control your TV from your phone.', 'Works with Android/Google TV, Samsung, LG webOS and Roku TVs on the same Wi-Fi.'],
+    ['Finds your TV automatically.', 'If it does not show up, pick the platform and enter the TV\u2019s IP address.'],
+    ['Full remote in one app.', 'Navigation, home and back, volume, mute, playback, power, number keypad and channel entry.'],
+    ['One-tap OTT shortcuts.', 'Netflix, YouTube, Prime Video, Disney+, JioHotstar, JioCinema and Apple TV.'],
+    ['Secure pairing.', 'Pairing credentials are stored encrypted on your phone.'],
+  ];
+  const note = 'Your phone and TV must be on the same Wi-Fi network. Some TVs need network remote access turned on and a prompt accepted on the TV, and compatibility can vary by model and firmware.';
+  await sendMail({
+    to: email,
+    subject: 'Free on Google Play: use your phone as a TV remote',
+    text: [
+      `Hi ${name},`,
+      '',
+      'Lost the TV remote again? Lounge Remote turns your Android phone into a remote for your smart TV. It is free to download.',
+      '',
+      ...features.map(([t, d]) => `- ${t} ${d}`),
+      '',
+      `Download free: ${LOUNGE_URL}`,
+      '',
+      note,
+      '',
+      'All the best,',
+      'Team AiCarrier',
+    ].join('\n'),
+    html: `<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;color:#1f2937;line-height:1.6">
+<p>Hi ${safeName},</p>
+<p>Lost the TV remote again? <strong>Lounge Remote</strong> turns your Android phone into a remote for your smart TV. It is free to download.</p>
+<ul>${features.map(([t, d]) => `<li><strong>${t}</strong> ${d}</li>`).join('')}</ul>
+<p style="margin:28px 0"><a href="${LOUNGE_URL}" style="background:#2563eb;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:6px;font-weight:bold;display:inline-block">Download free on Google Play</a></p>
+<p style="font-size:13px;color:#6b7280">${note}</p>
+<p>All the best,<br>Team AiCarrier</p>
+</div>`,
+  });
+}
+
+module.exports = { sendLoungePromoEmail, isEmailConfigured, sendPasswordResetCode, sendLoginCode, sendWelcomeEmail, sendUpdateNoticeEmail };
