@@ -7,7 +7,7 @@ const { rateLimit } = require('express-rate-limit');
 const prisma = require('../config/db');
 const { requireAuth } = require('../middleware/auth');
 const { generateOtp, sendOtpSms } = require('../services/otp.service');
-const { isEmailConfigured, sendPasswordResetCode, sendWelcomeEmail } = require('../services/email.service');
+const { isEmailConfigured, sendPasswordResetCode, sendLoginCode, sendWelcomeEmail } = require('../services/email.service');
 
 const router = express.Router();
 
@@ -222,6 +222,61 @@ router.post('/password-reset/email/complete', resetCompleteLimit, asyncHandler(a
   }
 
   res.json({ ok: true, message: 'Password reset successfully. You can now log in.' });
+}));
+
+// ---------- Email one-time-code login (existing accounts only) ----------
+
+router.post('/otp/email/send', resetSendLimit, asyncHandler(async (req, res) => {
+  const parsed = resetEmailSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Enter a valid email address' });
+  if (!isEmailConfigured()) return res.status(503).json({ error: 'Login email is not configured yet' });
+
+  const email = normaliseEmail(parsed.data.email);
+  const generic = { ok: true, message: 'If an account exists for this email, a login code has been sent.' };
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) return res.json(generic);
+
+  const code = crypto.randomInt(0, 1000000).toString().padStart(6, '0');
+  const otp = await prisma.$transaction(async (tx) => {
+    await tx.otpCode.updateMany({ where: { email, purpose: 'EMAIL_LOGIN', consumed: false }, data: { consumed: true } });
+    return tx.otpCode.create({
+      data: { email, purpose: 'EMAIL_LOGIN', code, expiresAt: new Date(Date.now() + 10 * 60 * 1000) },
+    });
+  });
+
+  try {
+    await sendLoginCode(email, code);
+  } catch (err) {
+    await prisma.otpCode.update({ where: { id: otp.id }, data: { consumed: true } }).catch(() => {});
+    console.error('Login code email failed:', err.response?.data || err.message);
+    return res.status(502).json({ error: 'Could not send a login code right now. Please try again later.' });
+  }
+  res.json(generic);
+}));
+
+const verifyEmailOtpSchema = z.object({ email: z.string().email(), code: z.string().regex(/^\d{6}$/) });
+router.post('/otp/email/verify', resetCompleteLimit, asyncHandler(async (req, res) => {
+  const parsed = verifyEmailOtpSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Enter a valid email and 6-digit code' });
+
+  const email = normaliseEmail(parsed.data.email);
+  const user = await prisma.user.findUnique({ where: { email } });
+  const bad = () => res.status(401).json({ error: 'Invalid or expired code' });
+  if (!user) return bad();
+
+  const otp = await prisma.otpCode.findFirst({
+    where: { email, purpose: 'EMAIL_LOGIN', code: parsed.data.code, consumed: false, expiresAt: { gt: new Date() } },
+    orderBy: { createdAt: 'desc' },
+  });
+  if (!otp) return bad();
+
+  const consumed = await prisma.otpCode.updateMany({
+    where: { id: otp.id, consumed: false, expiresAt: { gt: new Date() } },
+    data: { consumed: true },
+  });
+  if (consumed.count !== 1) return bad();
+
+  res.json({ token: signToken(user.id), user: safeUser(user) });
 }));
 
 // ---------- Phone + OTP auth ----------

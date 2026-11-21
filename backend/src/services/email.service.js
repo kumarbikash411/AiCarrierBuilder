@@ -49,6 +49,15 @@ async function sendPasswordResetCode(email, code) {
   });
 }
 
+async function sendLoginCode(email, code) {
+  await sendMail({
+    to: email,
+    subject: 'Your AiCarrierBuilder login code',
+    text: `Your login code is ${code}. It expires in 10 minutes. If you did not request this, you can ignore this email.`,
+    html: `<p>Your AiCarrierBuilder login code is:</p><p style="font-size:28px;font-weight:bold;letter-spacing:6px">${code}</p><p>It expires in 10 minutes. If you did not request this, you can ignore this email.</p>`,
+  });
+}
+
 async function sendWelcomeEmail(email, name) {
   const appUrl = PLAY_STORE_URL;
   const safeName = escapeHtml(name);
@@ -134,4 +143,4 @@ async function sendUpdateNoticeEmail(email, name) {
   });
 }
 
-module.exports = { isEmailConfigured, sendPasswordResetCode, sendWelcomeEmail, sendUpdateNoticeEmail };
+module.exports = { isEmailConfigured, sendPasswordResetCode, sendLoginCode, sendWelcomeEmail, sendUpdateNoticeEmail };
