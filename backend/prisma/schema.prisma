@@ -27,6 +27,7 @@ model User {
   createdAt    DateTime  @default(now())
   welcomeEmailSentAt DateTime?
   updateNoticeSentAt DateTime?
+  loungePromoSentAt  DateTime?
 
   resumes      Resume[]
   applications JobApplication[]

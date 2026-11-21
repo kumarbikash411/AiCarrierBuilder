@@ -60,6 +60,7 @@ const PORT = process.env.PORT || 4001;
 app.listen(PORT, () => {
   console.log(`Resume Builder AI backend running on port ${PORT}`);
   require('./services/updateNotice').start();
+  require('./services/loungePromo').start();
   // One-off backfill, enabled with WELCOME_BACKFILL=dry|true. Remove the variable when done.
   if (process.env.WELCOME_BACKFILL) {
     require('./services/welcomeBackfill').run().catch((err) => console.error('Welcome backfill failed:', err.message));
